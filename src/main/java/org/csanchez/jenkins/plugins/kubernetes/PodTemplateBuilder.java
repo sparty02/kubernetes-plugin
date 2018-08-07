@@ -196,12 +196,23 @@ public class PodTemplateBuilder {
 
         builder.withContainers(containers.values().toArray(new Container[containers.size()]));
         Pod pod = builder.endSpec().build();
-
+        
         // merge with the yaml
         String yaml = template.getYaml();
         if (!StringUtils.isBlank(yaml)) {
-            Pod podFromYaml = parseFromYaml(yaml);
-            pod = combine(podFromYaml, pod);
+            try (KubernetesClient client = slave == null ? new DefaultKubernetesClient() : slave.getKubernetesClient()) {                
+                Pod podFromYaml = client.pods()
+                        .load(new ByteArrayInputStream((yaml == null ? "" : yaml).getBytes(UTF_8))).get();
+                LOGGER.log(Level.FINEST, "Parsed pod template from yaml: {0}", podFromYaml);
+                // yaml can be just a fragment, avoid NPEs
+                if (podFromYaml.getMetadata() == null) {
+                    podFromYaml.setMetadata(new ObjectMeta());
+                }
+                if (podFromYaml.getSpec() == null) {
+                    podFromYaml.setSpec(new PodSpec());
+                }
+                pod = combine(podFromYaml, pod);
+            }
         }
 
         // Apply defaults

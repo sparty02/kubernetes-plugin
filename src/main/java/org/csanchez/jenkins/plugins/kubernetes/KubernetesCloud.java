@@ -386,9 +386,13 @@ public class KubernetesCloud extends Cloud {
             maxRequestsPerHost = DEFAULT_MAX_REQUESTS_PER_HOST;
         }
     }
+    
+    public int getMaxRequestsPerHost() {
+        return maxRequestsPerHost;
+    }
 
     public String getMaxRequestsPerHostStr() {
-        return String.valueOf(maxRequestsPerHost);
+        return String.valueOf(getMaxRequestsPerHost());
     }
 
     public void setConnectTimeout(int connectTimeout) {

@@ -164,6 +164,36 @@ public class KubernetesSlave extends AbstractCloudSlave {
             throw new IllegalStateException(getClass().getName() + " can be launched only by instances of " + KubernetesCloud.class.getName());
         }
     }
+    
+    /**
+     * Returns a client that can be used to connect to this agent.
+     * 
+     * @return a {@link KubernetesClient} that can be used to conenct to this agent.
+     * @throws KubernetesClientException if the associated {@link KubernetesCloud} config is invalid.
+     */
+    @Nonnull
+    public KubernetesClient getKubernetesClient() {
+        KubernetesCloud kubernetesCloud = getKubernetesCloud();
+        String serverUrl = kubernetesCloud.getServerUrl();
+        String namespace = kubernetesCloud.getNamespace();
+        String serverCertificate = kubernetesCloud.getServerCertificate();
+        String credentialsId = kubernetesCloud.getCredentialsId();
+        boolean skipTlsVerify = kubernetesCloud.isSkipTlsVerify();
+        int connectTimeout = kubernetesCloud.getConnectTimeout();
+        int readTimeout = kubernetesCloud.getReadTimeout();
+        int maxRequestsPerHost = kubernetesCloud.getMaxRequestsPerHost();
+                
+        try
+        {
+            return new KubernetesFactoryAdapter(serverUrl, namespace, serverCertificate, credentialsId, skipTlsVerify,
+                                                  connectTimeout, readTimeout, maxRequestsPerHost).createClient();
+        }
+        catch (UnrecoverableKeyException | CertificateEncodingException | NoSuchAlgorithmException
+            | KeyStoreException | IOException e)
+        {
+            throw new KubernetesClientException("Invalid kubernetes cloud configuration", e);
+        }
+    }
 
     static String getSlaveName(PodTemplate template) {
         String randString = RandomStringUtils.random(5, "bcdfghjklmnpqrstvwxz0123456789");
